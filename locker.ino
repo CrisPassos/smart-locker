@@ -4,32 +4,30 @@
 #include <Servo.h> 
 
 //******WI-FI********//
-//Dados da red WiFi
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+//Wireless
+const char* ssid = "**YOUR SSID**";
+const char* password = "**YOUR PASSWORD**";
 
-//Requisição GET
-const char* http_site = "IP OR NAME SITE";
-const int http_port = PORT;
+//Request GET
+const char* http_site = "**IP OR NAME SITE**";
+const int http_port = **PORT**;
 
-// Variáveis globais WI-FI
+//Global variables of WI-FI
 WiFiClient client;
-IPAddress server(000,000,000,000); //Endereço IP do servidor - http_site
-
+IPAddress server(000,000,000,000); //SERVICE IP ADDRESS 
 //******WI-FI********//
 
 //******KEYPAD******//
-//Variáveis que define a matriz do teclado
+//definition matrix of keypad
 const byte numRows= 4;
 const byte numCols= 3;
 
-//matriz do teclado formado
 char keymap[numRows][numCols]= { {'1', '2', '3'}, 
                                  {'4', '5', '6'}, 
                                  {'7', '8', '9'},
                                  {'*', '0', '#'} };
                                  
-//portas digitais correspondente as colunas e linhas
+//digital ports, in this case we used NODEMCU 
 byte rowPins[numRows] = {16,5,4,0};
 byte colPins[numCols]= {2,14,12};
 
@@ -49,7 +47,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Aguardando conexão");
   
-  //Tentando conectar ao Wi-fi
+  //Try connected to Wi-fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -61,7 +59,7 @@ void setup() {
 }
  
 void loop() { 
-  //chamada do teclado 
+  //Call method keypad
   keypadClick(); 
 }
 
@@ -92,7 +90,7 @@ void keypadClick(){
 }
 
 
-// Método que faz a requisição do site
+// Web site request
 void getPage(char senha[5]) {
   
   if ( !client.connect(server, http_port) ) {
@@ -104,23 +102,29 @@ void getPage(char senha[5]) {
   String url = "/openbox?pin_code=" + String(senha);
   Serial.println("requesting URL: ");
   Serial.println(url);
-  //String param = "?pin_code=" + String(senha);
   client.print(String("GET ") + url +" HTTP/1.1\r\n" +
                "Host: " + http_site + "\r\n" +
                "Content-Type: application/json; charset=utf-8" +
                "Connection: close\r\n\r\n");
 
-  Serial.println("request sent");
+  Serial.println("request enviada");
   
   while (client.connected()){ 
     if(client.available()) {
       String c = client.readString();
       Serial.println(c);
       Serial.println(c.indexOf(":1,"));
-      if(c.indexOf(":1,") > 0){
+      if(c.indexOf(":0,") > 0){
         Serial.print("Chamando o Motor de Passo");
         openDoor();
-      }         
+        data_count = 0;
+        for( int i = 0; i < sizeof(Data);  ++i )
+          Data[i] = (char)0;
+      } else {
+        data_count = 0;
+        for( int i = 0; i < sizeof(Data);  ++i )
+          Data[i] = (char)0;         
+      }
     } else {
       keypadClick();
     }
@@ -133,6 +137,9 @@ void openDoor(){
 }
 
 void closeDoor(){  
+  data_count = 0;
+  for( int i = 0; i < sizeof(Data);  ++i )
+   Data[i] = (char)0;
   ServoMotor.attach(servoPin);
   ServoMotor.write(0);
 }
